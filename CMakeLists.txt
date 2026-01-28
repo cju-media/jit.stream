@@ -72,6 +72,15 @@ if(APPLE)
         BUILD_WITH_INSTALL_RPATH TRUE
     )
 
+    # Add manual RPATH to binary just in case CMake misses it
+    add_custom_command(TARGET jit_stream_core POST_BUILD
+        COMMAND install_name_tool -add_rpath /opt/homebrew/lib "$<TARGET_FILE:jit_stream_core>"
+        COMMAND install_name_tool -add_rpath /usr/local/lib "$<TARGET_FILE:jit_stream_core>"
+        # Ignore errors if rpath already exists
+        # COMMAND true
+        COMMENT "Adding RPATH to binary"
+    )
+
     # Clean xattrs before signing to fix "resource fork" error
     add_custom_command(TARGET jit_stream_core POST_BUILD
         COMMAND xattr -rc "$<TARGET_BUNDLE_DIR:jit_stream_core>"
@@ -90,10 +99,11 @@ if(APPLE)
         COMMENT "Setting executable permission"
     )
 
-    # Verify Architecture
+    # Verify Architecture and Deps
     add_custom_command(TARGET jit_stream_core POST_BUILD
         COMMAND lipo -info "$<TARGET_FILE:jit_stream_core>"
-        COMMENT "Verifying built architecture"
+        COMMAND otool -L "$<TARGET_FILE:jit_stream_core>"
+        COMMENT "Verifying built architecture and dependencies"
     )
 
     # Debug: List contents and Cat Info.plist
