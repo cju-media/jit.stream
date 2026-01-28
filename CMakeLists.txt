@@ -4,6 +4,12 @@ project(jit.stream)
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 
+# Build Universal Binary on macOS to support both Intel and Apple Silicon
+if(APPLE)
+    set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "Build architectures for OS X" FORCE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "Minimum OS X deployment version" FORCE)
+endif()
+
 # Find FFmpeg using PkgConfig
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET libavcodec libavformat libavutil libswscale libswresample)
