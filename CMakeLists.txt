@@ -52,6 +52,7 @@ add_library(jit.stream MODULE ${SOURCES})
 
 # Ensure the binary name inside the bundle matches the bundle name
 set_target_properties(jit.stream PROPERTIES OUTPUT_NAME "jit.stream")
+set_target_properties(jit.stream PROPERTIES PREFIX "")
 
 if(APPLE)
     add_definitions(-DMAC_VERSION)
@@ -68,7 +69,9 @@ if(APPLE)
         MACOSX_BUNDLE_SHORT_VERSION_STRING "1.0.0"
         MACOSX_BUNDLE_LONG_VERSION_STRING "1.0.0"
         MACOSX_BUNDLE_COPYRIGHT "Copyright 2024"
+        MACOSX_BUNDLE_PACKAGE_TYPE "iLaX"
     )
+    # Note: 'iLaX' is the standard type for Max externals, though BNDL works too.
 
     # Clean xattrs before signing to fix "resource fork" error
     add_custom_command(TARGET jit.stream POST_BUILD
@@ -82,9 +85,15 @@ if(APPLE)
         COMMENT "Ad-hoc codesigning the bundle"
     )
 
+    # Ensure executable permission on the binary itself
+    add_custom_command(TARGET jit.stream POST_BUILD
+        COMMAND chmod +x "$<TARGET_FILE:jit.stream>"
+        COMMENT "Setting executable permission"
+    )
+
     # Verify Architecture
     add_custom_command(TARGET jit.stream POST_BUILD
-        COMMAND lipo -info "$<TARGET_FILE_DIR:jit.stream>/jit.stream"
+        COMMAND lipo -info "$<TARGET_FILE:jit.stream>"
         COMMENT "Verifying built architecture"
     )
 
