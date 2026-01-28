@@ -4,6 +4,19 @@ project(jit.stream)
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 
+# Force Apple Silicon build if on macOS to match Homebrew libs
+if(APPLE)
+    # Detect host architecture
+    execute_process(COMMAND uname -m OUTPUT_VARIABLE HOST_ARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if(HOST_ARCH STREQUAL "arm64")
+        set(CMAKE_OSX_ARCHITECTURES "arm64" CACHE STRING "Build architectures for OS X" FORCE)
+    else()
+        set(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE STRING "Build architectures for OS X" FORCE)
+    endif()
+
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum OS X deployment version" FORCE)
+endif()
+
 # Find FFmpeg using PkgConfig
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET libavcodec libavformat libavutil libswscale libswresample)
@@ -47,7 +60,6 @@ if(APPLE)
         BUNDLE ON
         BUNDLE_EXTENSION "mxo"
         XCODE_ATTRIBUTE_WRAPPER_EXTENSION "mxo"
-        # -bundle is usually added by MODULE, but -undefined dynamic_lookup is needed for Max
         LINK_FLAGS "-undefined dynamic_lookup"
         MACOSX_BUNDLE_GUI_IDENTIFIER "com.jit.stream"
         MACOSX_BUNDLE_BUNDLE_NAME "jit.stream"
@@ -57,11 +69,22 @@ if(APPLE)
         MACOSX_BUNDLE_COPYRIGHT "Copyright 2024"
     )
 
+    # Clean xattrs before signing to fix "resource fork" error
+    add_custom_command(TARGET jit.stream POST_BUILD
+        COMMAND xattr -rc "$<TARGET_BUNDLE_DIR:jit.stream>"
+        COMMENT "Cleaning extended attributes"
+    )
+
     # Ad-hoc codesign the bundle root
-    # Uses TARGET_BUNDLE_DIR to correctly resolve the .mxo path
     add_custom_command(TARGET jit.stream POST_BUILD
         COMMAND codesign --force --deep -s - "$<TARGET_BUNDLE_DIR:jit.stream>"
         COMMENT "Ad-hoc codesigning the bundle"
+    )
+
+    # Verify Architecture
+    add_custom_command(TARGET jit.stream POST_BUILD
+        COMMAND lipo -info "$<TARGET_FILE_DIR:jit.stream>/jit.stream"
+        COMMENT "Verifying built architecture"
     )
 
 elseif(WIN32)
