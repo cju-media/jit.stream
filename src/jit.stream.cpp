@@ -20,6 +20,7 @@ extern "C" {
 #include <libavutil/opt.h>
 #include <libavutil/imgutils.h>
 #include <libavutil/time.h>
+#include <libavutil/channel_layout.h>
 #include <libswscale/swscale.h>
 #include <libswresample/swresample.h>
 }
@@ -234,8 +235,16 @@ private:
         a_ctx->sample_fmt = AV_SAMPLE_FMT_FLTP;
         a_ctx->bit_rate = 128000;
         a_ctx->sample_rate = sample_rate;
-        a_ctx->ch_layout = (AVChannelLayout)AV_CHANNEL_LAYOUT_STEREO;
+
+        // Handle API differences for channel layout
+#if LIBAVCODEC_VERSION_MAJOR >= 60
+        AVChannelLayout stereo_layout;
+        av_channel_layout_default(&stereo_layout, 2);
+        av_channel_layout_copy(&a_ctx->ch_layout, &stereo_layout);
+#else
         a_ctx->channels = 2;
+        a_ctx->channel_layout = AV_CH_LAYOUT_STEREO;
+#endif
 
         a_stream->time_base = {1, sample_rate};
 
@@ -334,8 +343,14 @@ private:
         AVFrame* frame = av_frame_alloc();
         frame->nb_samples = nb_samples;
         frame->format = a_ctx->sample_fmt;
-        frame->ch_layout = a_ctx->ch_layout;
+#if LIBAVCODEC_VERSION_MAJOR >= 60
+        AVChannelLayout stereo_layout;
+        av_channel_layout_default(&stereo_layout, 2);
+        av_channel_layout_copy(&frame->ch_layout, &stereo_layout);
+#else
         frame->channels = 2;
+        frame->channel_layout = AV_CH_LAYOUT_STEREO;
+#endif
         frame->sample_rate = a_ctx->sample_rate;
 
         av_frame_get_buffer(frame, 0);
