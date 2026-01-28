@@ -63,6 +63,7 @@ if(APPLE)
         LINK_FLAGS "-undefined dynamic_lookup"
         MACOSX_BUNDLE_GUI_IDENTIFIER "com.jit.stream"
         MACOSX_BUNDLE_BUNDLE_NAME "jit.stream"
+        MACOSX_BUNDLE_EXECUTABLE_NAME "jit.stream"
         MACOSX_BUNDLE_INFO_STRING "jit.stream external"
         MACOSX_BUNDLE_SHORT_VERSION_STRING "1.0.0"
         MACOSX_BUNDLE_LONG_VERSION_STRING "1.0.0"
