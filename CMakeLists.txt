@@ -48,16 +48,18 @@ include_directories(
 
 set(SOURCES src/jit.stream.cpp)
 
-add_library(jit.stream MODULE ${SOURCES})
+# Rename internal target to avoid collision with output name
+add_library(jit_stream_core MODULE ${SOURCES})
 
 # Ensure the binary name inside the bundle matches the bundle name
-set_target_properties(jit.stream PROPERTIES OUTPUT_NAME "jit.stream")
-set_target_properties(jit.stream PROPERTIES PREFIX "")
+set_target_properties(jit_stream_core PROPERTIES OUTPUT_NAME "jit.stream")
+set_target_properties(jit_stream_core PROPERTIES PREFIX "")
+set_target_properties(jit_stream_core PROPERTIES SUFFIX "")
 
 if(APPLE)
     add_definitions(-DMAC_VERSION)
 
-    set_target_properties(jit.stream PROPERTIES
+    set_target_properties(jit_stream_core PROPERTIES
         BUNDLE ON
         BUNDLE_EXTENSION "mxo"
         XCODE_ATTRIBUTE_WRAPPER_EXTENSION "mxo"
@@ -70,33 +72,41 @@ if(APPLE)
         MACOSX_BUNDLE_LONG_VERSION_STRING "1.0.0"
         MACOSX_BUNDLE_COPYRIGHT "Copyright 2024"
         MACOSX_BUNDLE_PACKAGE_TYPE "iLaX"
-        # Add Homebrew lib paths to RPATH so Max can find FFmpeg dylibs
         INSTALL_RPATH "/opt/homebrew/lib;/usr/local/lib"
         BUILD_WITH_INSTALL_RPATH TRUE
     )
 
     # Clean xattrs before signing to fix "resource fork" error
-    add_custom_command(TARGET jit.stream POST_BUILD
-        COMMAND xattr -rc "$<TARGET_BUNDLE_DIR:jit.stream>"
+    add_custom_command(TARGET jit_stream_core POST_BUILD
+        COMMAND xattr -rc "$<TARGET_BUNDLE_DIR:jit_stream_core>"
         COMMENT "Cleaning extended attributes"
     )
 
     # Ad-hoc codesign the bundle root
-    add_custom_command(TARGET jit.stream POST_BUILD
-        COMMAND codesign --force --deep -s - "$<TARGET_BUNDLE_DIR:jit.stream>"
+    add_custom_command(TARGET jit_stream_core POST_BUILD
+        COMMAND codesign --force --deep -s - "$<TARGET_BUNDLE_DIR:jit_stream_core>"
         COMMENT "Ad-hoc codesigning the bundle"
     )
 
     # Ensure executable permission on the binary itself
-    add_custom_command(TARGET jit.stream POST_BUILD
-        COMMAND chmod +x "$<TARGET_FILE:jit.stream>"
+    add_custom_command(TARGET jit_stream_core POST_BUILD
+        COMMAND chmod +x "$<TARGET_FILE:jit_stream_core>"
         COMMENT "Setting executable permission"
     )
 
     # Verify Architecture
-    add_custom_command(TARGET jit.stream POST_BUILD
-        COMMAND lipo -info "$<TARGET_FILE:jit.stream>"
+    add_custom_command(TARGET jit_stream_core POST_BUILD
+        COMMAND lipo -info "$<TARGET_FILE:jit_stream_core>"
         COMMENT "Verifying built architecture"
+    )
+
+    # Debug: List contents and Cat Info.plist
+    add_custom_command(TARGET jit_stream_core POST_BUILD
+        COMMAND echo "--- BUNDLE STRUCTURE ---"
+        COMMAND ls -R "$<TARGET_BUNDLE_DIR:jit_stream_core>"
+        COMMAND echo "--- INFO.PLIST ---"
+        COMMAND cat "$<TARGET_BUNDLE_DIR:jit_stream_core>/Contents/Info.plist"
+        COMMENT "Debugging Bundle"
     )
 
 elseif(WIN32)
@@ -110,9 +120,9 @@ elseif(WIN32)
          message(FATAL_ERROR "MaxAPI.lib not found at ${MAXAPI_LIB}")
     endif()
 
-    target_link_libraries(jit.stream PRIVATE ${MAXAPI_LIB} ${MSPAPI_LIB} ${JITAPI_LIB})
+    target_link_libraries(jit_stream_core PRIVATE ${MAXAPI_LIB} ${MSPAPI_LIB} ${JITAPI_LIB})
 endif()
 
-target_link_libraries(jit.stream PRIVATE PkgConfig::FFMPEG)
+target_link_libraries(jit_stream_core PRIVATE PkgConfig::FFMPEG)
 
-target_compile_definitions(jit.stream PRIVATE C74_X64)
+target_compile_definitions(jit_stream_core PRIVATE C74_X64)
