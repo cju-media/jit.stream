@@ -70,8 +70,10 @@ if(APPLE)
         MACOSX_BUNDLE_LONG_VERSION_STRING "1.0.0"
         MACOSX_BUNDLE_COPYRIGHT "Copyright 2024"
         MACOSX_BUNDLE_PACKAGE_TYPE "iLaX"
+        # Add Homebrew lib paths to RPATH so Max can find FFmpeg dylibs
+        INSTALL_RPATH "/opt/homebrew/lib;/usr/local/lib"
+        BUILD_WITH_INSTALL_RPATH TRUE
     )
-    # Note: 'iLaX' is the standard type for Max externals, though BNDL works too.
 
     # Clean xattrs before signing to fix "resource fork" error
     add_custom_command(TARGET jit.stream POST_BUILD
