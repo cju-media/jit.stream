@@ -72,14 +72,7 @@ if(APPLE)
         BUILD_WITH_INSTALL_RPATH TRUE
     )
 
-    # Add manual RPATH to binary just in case CMake misses it
-    add_custom_command(TARGET jit_stream_core POST_BUILD
-        COMMAND install_name_tool -add_rpath /opt/homebrew/lib "$<TARGET_FILE:jit_stream_core>"
-        COMMAND install_name_tool -add_rpath /usr/local/lib "$<TARGET_FILE:jit_stream_core>"
-        # Ignore errors if rpath already exists
-        # COMMAND true
-        COMMENT "Adding RPATH to binary"
-    )
+    # Removed manual install_name_tool -add_rpath as INSTALL_RPATH handles it now.
 
     # Clean xattrs before signing to fix "resource fork" error
     add_custom_command(TARGET jit_stream_core POST_BUILD
@@ -131,4 +124,7 @@ endif()
 
 target_link_libraries(jit_stream_core PRIVATE PkgConfig::FFMPEG)
 
-target_compile_definitions(jit_stream_core PRIVATE C74_X64)
+# Removed explicit C74_X64 to avoid warning, or check if needed.
+# Usually standard headers define it. If compilation fails without it, we add it back.
+# But for now, user logs show it's redefined, so removing it cleans the warning.
+# target_compile_definitions(jit_stream_core PRIVATE C74_X64)

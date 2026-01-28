@@ -13,6 +13,7 @@
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+#include <cstdio> // For snprintf
 
 extern "C" {
 #include <libavformat/avformat.h>
@@ -461,8 +462,8 @@ void jit_stream_free(t_jit_stream* x) {
 
 void jit_stream_assist(t_jit_stream* x, void* b, long m, long a, char* s) {
     if (m == ASSIST_INLET) {
-        if (a == 0) sprintf(s, "jit_matrix/texture (Video)");
-        else sprintf(s, "Signal %ld (Audio)", a);
+        if (a == 0) snprintf(s, 256, "jit_matrix/texture (Video)");
+        else snprintf(s, 256, "Signal %ld (Audio)", a);
     }
 }
 
