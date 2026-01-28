@@ -18,7 +18,6 @@ if(NOT DEFINED MAX_SDK_PATH)
     elseif(EXISTS "${CMAKE_SOURCE_DIR}/../max-sdk")
          set(MAX_SDK_PATH "${CMAKE_SOURCE_DIR}/../max-sdk")
     else()
-        # Default
         set(MAX_SDK_PATH "${CMAKE_SOURCE_DIR}/max-sdk-base")
     endif()
 endif()
@@ -29,9 +28,58 @@ if(NOT EXISTS "${MAX_SDK_PATH}")
     message(FATAL_ERROR "Max SDK not found at ${MAX_SDK_PATH}. Please set MAX_SDK_PATH correctly.")
 endif()
 
-# Add the Max SDK as a subdirectory.
-# The CMakeLists.txt is at the root of max-sdk-base (or max-sdk), not inside c74support.
-add_subdirectory("${MAX_SDK_PATH}" max_sdk_support)
+# Explicitly add include directories to find ext.h, jit.common.h, etc.
+include_directories(
+    "${MAX_SDK_PATH}/c74support/max-includes"
+    "${MAX_SDK_PATH}/c74support/msp-includes"
+    "${MAX_SDK_PATH}/c74support/jit-includes"
+)
+
+# Platform specific definitions and libraries
+if(APPLE)
+    add_definitions(-DMAC_VERSION)
+
+    # Manually check for Frameworks using explicit paths
+    set(MAXAPI_FRAMEWORK "${MAX_SDK_PATH}/c74support/max-includes/MaxAPI.framework")
+    set(MSPAPI_FRAMEWORK "${MAX_SDK_PATH}/c74support/msp-includes/MSPAPI.framework")
+    set(JITAPI_FRAMEWORK "${MAX_SDK_PATH}/c74support/jit-includes/JitterAPI.framework")
+
+    if(EXISTS "${MAXAPI_FRAMEWORK}")
+        set(MAXAPI_LIB "${MAXAPI_FRAMEWORK}")
+        message(STATUS "Found MaxAPI: ${MAXAPI_LIB}")
+    else()
+        message(FATAL_ERROR "MaxAPI.framework not found at ${MAXAPI_FRAMEWORK}")
+    endif()
+
+    if(EXISTS "${MSPAPI_FRAMEWORK}")
+        set(MSPAPI_LIB "${MSPAPI_FRAMEWORK}")
+        message(STATUS "Found MSPAPI: ${MSPAPI_LIB}")
+    else()
+        message(FATAL_ERROR "MSPAPI.framework not found at ${MSPAPI_FRAMEWORK}")
+    endif()
+
+    if(EXISTS "${JITAPI_FRAMEWORK}")
+        set(JITAPI_LIB "${JITAPI_FRAMEWORK}")
+        message(STATUS "Found JitterAPI: ${JITAPI_LIB}")
+    else()
+        message(FATAL_ERROR "JitterAPI.framework not found at ${JITAPI_FRAMEWORK}")
+    endif()
+
+    set(MAX_LIBS ${MAXAPI_LIB} ${MSPAPI_LIB} ${JITAPI_LIB})
+
+elseif(WIN32)
+    add_definitions(-DWIN_VERSION -DWIN32_LEAN_AND_MEAN)
+
+    set(MAXAPI_LIB "${MAX_SDK_PATH}/c74support/max-includes/x64/MaxAPI.lib")
+    set(MSPAPI_LIB "${MAX_SDK_PATH}/c74support/msp-includes/x64/MSPAPI.lib")
+    set(JITAPI_LIB "${MAX_SDK_PATH}/c74support/jit-includes/x64/JitterAPI.lib")
+
+    if (NOT EXISTS "${MAXAPI_LIB}")
+         message(FATAL_ERROR "MaxAPI.lib not found at ${MAXAPI_LIB}")
+    endif()
+
+    set(MAX_LIBS ${MAXAPI_LIB} ${MSPAPI_LIB} ${JITAPI_LIB})
+endif()
 
 # Source files
 set(SOURCES src/jit.stream.cpp)
@@ -40,16 +88,13 @@ set(SOURCES src/jit.stream.cpp)
 add_library(jit.stream MODULE ${SOURCES})
 
 # Link libraries
-# Use the targets defined by the SDK
 target_link_libraries(jit.stream
     PRIVATE
     PkgConfig::FFMPEG
-    c74::max
-    c74::msp
-    c74::jit
+    ${MAX_LIBS}
 )
 
-# Properties handled mostly by SDK, but we ensure module/bundle
+# Properties
 if(APPLE)
     set_target_properties(jit.stream PROPERTIES
         BUNDLE ON
