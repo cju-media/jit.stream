@@ -29,10 +29,9 @@ if(NOT EXISTS "${MAX_SDK_PATH}")
     message(FATAL_ERROR "Max SDK not found at ${MAX_SDK_PATH}. Please set MAX_SDK_PATH correctly.")
 endif()
 
-# Modern Max SDK CMake Integration
-# Instead of manually finding libraries, we add the SDK support folder.
-# This defines targets like c74::max, c74::msp, c74::jit
-add_subdirectory("${MAX_SDK_PATH}/c74support" c74support)
+# Add the Max SDK as a subdirectory.
+# The CMakeLists.txt is at the root of max-sdk-base (or max-sdk), not inside c74support.
+add_subdirectory("${MAX_SDK_PATH}" max_sdk_support)
 
 # Source files
 set(SOURCES src/jit.stream.cpp)
