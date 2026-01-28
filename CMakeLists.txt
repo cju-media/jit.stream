@@ -55,6 +55,12 @@ if(APPLE)
         LINK_FLAGS "-undefined dynamic_lookup"
     )
 
+    # Ad-hoc codesign to bypass "system security policy" errors on Apple Silicon
+    add_custom_command(TARGET jit.stream POST_BUILD
+        COMMAND codesign --force --deep -s - "$<TARGET_FILE_DIR:jit.stream>/../"
+        COMMENT "Ad-hoc codesigning the bundle"
+    )
+
 elseif(WIN32)
     add_definitions(-DWIN_VERSION -DWIN32_LEAN_AND_MEAN)
 
