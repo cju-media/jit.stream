@@ -67,11 +67,7 @@ if(APPLE)
         MACOSX_BUNDLE_GUI_IDENTIFIER "com.jit.stream"
         MACOSX_BUNDLE_BUNDLE_NAME "jit.stream"
         MACOSX_BUNDLE_EXECUTABLE_NAME "jit.stream"
-        MACOSX_BUNDLE_INFO_STRING "jit.stream external"
-        MACOSX_BUNDLE_SHORT_VERSION_STRING "1.0.0"
-        MACOSX_BUNDLE_LONG_VERSION_STRING "1.0.0"
-        MACOSX_BUNDLE_COPYRIGHT "Copyright 2024"
-        MACOSX_BUNDLE_PACKAGE_TYPE "iLaX"
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in"
         INSTALL_RPATH "/opt/homebrew/lib;/usr/local/lib"
         BUILD_WITH_INSTALL_RPATH TRUE
     )
