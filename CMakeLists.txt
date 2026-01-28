@@ -4,11 +4,11 @@ project(jit.stream)
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 
-# Build Universal Binary on macOS to support both Intel and Apple Silicon
-if(APPLE)
-    set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "Build architectures for OS X" FORCE)
-    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "Minimum OS X deployment version" FORCE)
-endif()
+# Revert to native architecture to avoid linking issues with single-arch dependencies (like Homebrew FFmpeg)
+# if(APPLE)
+#     set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "Build architectures for OS X" FORCE)
+#     set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "Minimum OS X deployment version" FORCE)
+# endif()
 
 # Find FFmpeg using PkgConfig
 find_package(PkgConfig REQUIRED)
@@ -51,20 +51,31 @@ add_library(jit.stream MODULE ${SOURCES})
 if(APPLE)
     add_definitions(-DMAC_VERSION)
 
-    # On macOS, we rely on the host application (Max) to provide symbols.
-    # We use dynamic lookup instead of linking against static Frameworks/libs,
-    # which avoids issues if the SDK repository does not contain the binary frameworks.
+    # Bundle Properties for Info.plist
     set_target_properties(jit.stream PROPERTIES
         BUNDLE ON
         BUNDLE_EXTENSION "mxo"
         XCODE_ATTRIBUTE_WRAPPER_EXTENSION "mxo"
         LINK_FLAGS "-undefined dynamic_lookup"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "com.jit.stream"
+        MACOSX_BUNDLE_BUNDLE_NAME "jit.stream"
+        MACOSX_BUNDLE_INFO_STRING "jit.stream external"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "1.0.0"
+        MACOSX_BUNDLE_LONG_VERSION_STRING "1.0.0"
+        MACOSX_BUNDLE_COPYRIGHT "Copyright 2024"
     )
 
     # Ad-hoc codesign to bypass "system security policy" errors on Apple Silicon
+    # Sign the BUNDLE ROOT (../../ from MacOS/binary)
     add_custom_command(TARGET jit.stream POST_BUILD
-        COMMAND codesign --force --deep -s - "$<TARGET_FILE_DIR:jit.stream>/../"
-        COMMENT "Ad-hoc codesigning the bundle"
+        COMMAND codesign --force --deep -s - "$<TARGET_FILE_DIR:jit.stream>/../../"
+        COMMENT "Ad-hoc codesigning the bundle root"
+    )
+
+    # Verify Architecture
+    add_custom_command(TARGET jit.stream POST_BUILD
+        COMMAND lipo -info "$<TARGET_FILE_DIR:jit.stream>/jit.stream"
+        COMMENT "Verifying built architecture"
     )
 
 elseif(WIN32)
