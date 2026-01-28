@@ -17,9 +17,9 @@ if(APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum OS X deployment version" FORCE)
 endif()
 
-# Find FFmpeg using PkgConfig
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET libavcodec libavformat libavutil libswscale libswresample)
+# FFmpeg Disabled for debugging bundle load issues
+# find_package(PkgConfig REQUIRED)
+# pkg_check_modules(FFMPEG REQUIRED IMPORTED_TARGET libavcodec libavformat libavutil libswscale libswresample)
 
 # Max SDK Path configuration
 if(NOT DEFINED MAX_SDK_PATH)
@@ -68,11 +68,9 @@ if(APPLE)
         MACOSX_BUNDLE_BUNDLE_NAME "jit.stream"
         MACOSX_BUNDLE_EXECUTABLE_NAME "jit.stream"
         MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in"
-        INSTALL_RPATH "/opt/homebrew/lib;/usr/local/lib"
-        BUILD_WITH_INSTALL_RPATH TRUE
+        # INSTALL_RPATH "/opt/homebrew/lib;/usr/local/lib"
+        # BUILD_WITH_INSTALL_RPATH TRUE
     )
-
-    # Removed manual install_name_tool -add_rpath as INSTALL_RPATH handles it now.
 
     # Clean xattrs before signing to fix "resource fork" error
     add_custom_command(TARGET jit_stream_core POST_BUILD
@@ -92,11 +90,11 @@ if(APPLE)
         COMMENT "Setting executable permission"
     )
 
-    # Verify Architecture and Deps
+    # Verify Architecture
     add_custom_command(TARGET jit_stream_core POST_BUILD
         COMMAND lipo -info "$<TARGET_FILE:jit_stream_core>"
-        COMMAND otool -L "$<TARGET_FILE:jit_stream_core>"
-        COMMENT "Verifying built architecture and dependencies"
+        # COMMAND otool -L "$<TARGET_FILE:jit_stream_core>"
+        COMMENT "Verifying built architecture"
     )
 
     # Debug: List contents and Cat Info.plist
@@ -122,9 +120,7 @@ elseif(WIN32)
     target_link_libraries(jit_stream_core PRIVATE ${MAXAPI_LIB} ${MSPAPI_LIB} ${JITAPI_LIB})
 endif()
 
-target_link_libraries(jit_stream_core PRIVATE PkgConfig::FFMPEG)
+# target_link_libraries(jit_stream_core PRIVATE PkgConfig::FFMPEG)
 
-# Removed explicit C74_X64 to avoid warning, or check if needed.
-# Usually standard headers define it. If compilation fails without it, we add it back.
-# But for now, user logs show it's redefined, so removing it cleans the warning.
+# Removed explicit C74_X64 to avoid warning
 # target_compile_definitions(jit_stream_core PRIVATE C74_X64)
