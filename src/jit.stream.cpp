@@ -13,7 +13,7 @@
 #include <iostream>
 #include <cmath>
 #include <algorithm>
-#include <cstdio> // For snprintf
+#include <cstdio>
 
 extern "C" {
 #include <libavformat/avformat.h>
@@ -412,7 +412,8 @@ void jit_stream_matrix(t_jit_stream* x, t_symbol* s, long argc, t_atom* argv);
 void jit_stream_texture(t_jit_stream* x, t_symbol* s, long argc, t_atom* argv);
 void jit_stream_assist(t_jit_stream* x, void* b, long m, long a, char* s);
 
-extern "C" void ext_main(void* r) {
+// Ensure visibility of the entry point
+extern "C" __attribute__((visibility("default"))) void ext_main(void* r) {
     common_symbols_init(); // Initialize standard symbols
 
     t_class* c = class_new("jit.stream", (method)jit_stream_new, (method)jit_stream_free, sizeof(t_jit_stream), NULL, A_GIMME, 0);
