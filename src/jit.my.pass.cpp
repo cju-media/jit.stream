@@ -4,7 +4,6 @@
 */
 
 #include "jit.common.h"
-#include "jit.max.h" // Required for max_jit_* functions
 
 // Instance structure
 typedef struct _jit_my_pass {
@@ -125,6 +124,7 @@ out:
 // Wrapper for the max object
 #include "ext.h"
 #include "ext_obex.h"
+#include "jit.max.h"
 
 typedef struct _max_jit_my_pass {
     t_object        ob;
@@ -135,29 +135,29 @@ void *max_jit_my_pass_new(t_symbol *s, long argc, t_atom *argv);
 void max_jit_my_pass_free(t_max_jit_my_pass *x);
 t_class *max_jit_my_pass_class;
 
-// Max Entry Point: Must return void
+// Max Entry Point
 extern "C" __attribute__((visibility("default"))) void ext_main(void *r) {
+    t_class *c;
+
     // Initialize Jitter Class
     jit_my_pass_init();
 
-    // Initialize Max Wrapper Class
-    setup((t_messlist**)&max_jit_my_pass_class, (method)max_jit_my_pass_new, (method)max_jit_my_pass_free, (short)sizeof(t_max_jit_my_pass),
-        0, A_GIMME, 0);
+    common_symbols_init();
 
-    // Use max_jit_class_obex_setup instead of max_jit_classex_setup if available,
-    // or just ignore the deprecation warning for now as it's standard legacy SDK usage.
-    // However, modern SDK uses:
-    t_class *c = max_jit_my_pass_class;
+    // Use class_new instead of setup
+    c = class_new("jit.my.pass", (method)max_jit_my_pass_new, (method)max_jit_my_pass_free, sizeof(t_max_jit_my_pass), NULL, A_GIMME, 0);
 
     max_jit_class_obex_setup(c, calcoffset(t_max_jit_my_pass, obex));
 
     // Add MOP wrapper methods
-    max_jit_class_mop_wrap(c, _jit_my_pass_class, 0);
+    // Cast void* to t_class* to avoid conversion error
+    max_jit_class_mop_wrap(c, (t_class *)_jit_my_pass_class, 0);
 
     // Standard Max wrapper methods
-    max_jit_class_wrap_standard(c, _jit_my_pass_class, 0);
+    max_jit_class_wrap_standard(c, (t_class *)_jit_my_pass_class, 0);
 
     class_register(CLASS_BOX, c);
+    max_jit_my_pass_class = c;
 }
 
 void *max_jit_my_pass_new(t_symbol *s, long argc, t_atom *argv) {
