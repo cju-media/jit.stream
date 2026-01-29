@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cstdio>
 
+/*
 extern "C" {
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
@@ -25,6 +26,7 @@ extern "C" {
 #include <libswscale/swscale.h>
 #include <libswresample/swresample.h>
 }
+*/
 
 // Audio Ring Buffer (Lock-Free for Single Producer/Consumer)
 class AudioRingBuffer {
@@ -85,8 +87,8 @@ struct VideoFrame {
 // FFmpeg Streamer Class
 class Streamer {
 public:
-    Streamer() : fmt_ctx(nullptr), v_ctx(nullptr), a_ctx(nullptr),
-                 v_stream(nullptr), a_stream(nullptr), sws_ctx(nullptr), swr_ctx(nullptr),
+    Streamer() : // fmt_ctx(nullptr), v_ctx(nullptr), a_ctx(nullptr),
+                 // v_stream(nullptr), a_stream(nullptr), sws_ctx(nullptr), swr_ctx(nullptr),
                  streaming(false), width(0), height(0), fps(0), v_pts(0), a_pts(0),
                  sws_width(0), sws_height(0),
                  a_ring(131072) {}
@@ -105,7 +107,7 @@ public:
         this->sample_rate = sample_rate;
 
         streaming = true;
-        worker = std::thread(&Streamer::loop, this);
+        // worker = std::thread(&Streamer::loop, this);
         return true;
     }
 
@@ -129,11 +131,13 @@ public:
     }
 
 private:
+    /*
     AVFormatContext* fmt_ctx;
     AVCodecContext *v_ctx, *a_ctx;
     AVStream *v_stream, *a_stream;
     SwsContext* sws_ctx;
     SwrContext* swr_ctx;
+    */
 
     std::thread worker;
     std::atomic<bool> streaming;
@@ -152,6 +156,7 @@ private:
     int sws_width, sws_height;
 
     void cleanup_ffmpeg() {
+        /*
         if (fmt_ctx) {
             // Only write trailer if we actually started (v_stream exists)
             if (v_stream) av_write_trailer(fmt_ctx);
@@ -168,11 +173,13 @@ private:
 
         v_stream = nullptr;
         a_stream = nullptr;
+        */
         sws_width = 0;
         sws_height = 0;
     }
 
     bool internal_connect() {
+        /*
         avformat_alloc_output_context2(&fmt_ctx, nullptr, "flv", url.c_str());
         if (!fmt_ctx) return false;
 
@@ -187,12 +194,13 @@ private:
         }
 
         if (avformat_write_header(fmt_ctx, nullptr) < 0) return false;
-
+        */
         v_pts = 0;
         a_pts = 0;
         return true;
     }
 
+    /*
     bool add_video_stream(int w, int h, int fps, int bitrate) {
         const AVCodec* codec = avcodec_find_encoder(AV_CODEC_ID_H264);
         if (!codec) return false;
@@ -256,6 +264,7 @@ private:
         avcodec_parameters_from_context(a_stream->codecpar, a_ctx);
         return true;
     }
+    */
 
     void loop() {
         if (!internal_connect()) {
@@ -295,6 +304,7 @@ private:
     }
 
     void process_video(const VideoFrame& vf) {
+        /*
         if (!v_ctx) return;
 
         AVFrame* frame = av_frame_alloc();
@@ -336,9 +346,11 @@ private:
         } else {
              av_frame_free(&frame);
         }
+        */
     }
 
     void process_audio(const float* samples, int nb_samples) {
+        /*
         if (!a_ctx) return;
 
         AVFrame* frame = av_frame_alloc();
@@ -384,6 +396,7 @@ private:
             }
             av_packet_free(&pkt);
         }
+        */
     }
 };
 
