@@ -4,17 +4,11 @@ project(jit.stream)
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 
-# Force Apple Silicon build if on macOS to match Homebrew libs
+# Build Universal Binary (Intel + Apple Silicon) since FFmpeg is disabled
+# This handles cases where Max is running in Rosetta (x86_64) on an ARM machine.
 if(APPLE)
-    # Detect host architecture
-    execute_process(COMMAND uname -m OUTPUT_VARIABLE HOST_ARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
-    if(HOST_ARCH STREQUAL "arm64")
-        set(CMAKE_OSX_ARCHITECTURES "arm64" CACHE STRING "Build architectures for OS X" FORCE)
-    else()
-        set(CMAKE_OSX_ARCHITECTURES "x86_64" CACHE STRING "Build architectures for OS X" FORCE)
-    endif()
-
-    set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum OS X deployment version" FORCE)
+    set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "Build architectures for OS X" FORCE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "Minimum OS X deployment version" FORCE)
 endif()
 
 # FFmpeg Disabled for debugging bundle load issues
@@ -68,6 +62,7 @@ if(APPLE)
         MACOSX_BUNDLE_BUNDLE_NAME "jit.stream"
         MACOSX_BUNDLE_EXECUTABLE_NAME "jit.stream"
         MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in"
+        # RPATH not needed for dummy build
         # INSTALL_RPATH "/opt/homebrew/lib;/usr/local/lib"
         # BUILD_WITH_INSTALL_RPATH TRUE
     )
